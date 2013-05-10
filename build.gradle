@@ -1,0 +1,49 @@
+apply plugin: 'java'
+	
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.5'
+}
+
+// robovm home (usually /opt/robovm/)
+project.ext.set("robovm_home", "/opt/robovm/")
+
+// project dependencies
+dependencies {    
+    compile fileTree (dir: "$project.robovm_home/lib/", includes: ['*.jar'])
+}
+
+// source is located in src
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/']
+        }
+        
+        resources {
+            srcDirs = ['src/']
+        }
+    }
+
+    test {
+        java {
+            srcDirs = ['test/']
+        }
+    }
+}
+
+// main class 
+String mainClass = "eu.mihosoft.robovm.gradle01.IOSDemo"
+
+// compile bytecode to llvm and run in the ios simulator
+task run (dependsOn: compileJava){
+
+    doFirst {
+        println(">> Running RoboVM")
+        String cmd = "$project.robovm_home/bin/robovm -verbose -arch x86 -os ios -cp $project.robovm_home/lib/robovm-objc.jar:$project.robovm_home/lib/robovm-cocoatouch.jar:$projectDir/build/classes/main/ -run $mainClass"
+        def proc = cmd.execute()
+        
+        proc.in.eachLine {line -> println line}
+        proc.err.eachLine {line -> System.err.println( 'ERROR: ' + line)}
+        proc.waitFor()
+    }
+}
